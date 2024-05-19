@@ -67,6 +67,7 @@ module Dependabot
         "github-actions" => "github_actions",
         "gitsubmodule" => "submodules",
         "gomod" => "go_modules",
+        "helm" => "helm",
         "gradle" => "gradle",
         "maven" => "maven",
         "mix" => "hex",

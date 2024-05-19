@@ -24,6 +24,7 @@ GEMSPECS = %w(
   maven/dependabot-maven.gemspec
   bundler/dependabot-bundler.gemspec
   elm/dependabot-elm.gemspec
+  helm/dependabot-helm.gemspec
   cargo/dependabot-cargo.gemspec
   npm_and_yarn/dependabot-npm_and_yarn.gemspec
   composer/dependabot-composer.gemspec
