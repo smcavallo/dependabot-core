@@ -152,7 +152,7 @@ RSpec.describe Dependabot::Python::FileParser::SetupFileParser do
 
           it "excludes the dependency importing a version" do
             expect(dependencies.count).to eq(14)
-            expect(dependencies.map(&:name)).to_not include("acme")
+            expect(dependencies.map(&:name)).not_to include("acme")
           end
         end
       end
@@ -270,9 +270,9 @@ RSpec.describe Dependabot::Python::FileParser::SetupFileParser do
       end
 
       context "with comments in the setup.cfg file" do
-        let(:setup_cfg_file_fixture_name) { "with_comments.cfg" }
-
         subject(:dependency) { dependencies.find { |d| d.name == "boto3" } }
+
+        let(:setup_cfg_file_fixture_name) { "with_comments.cfg" }
 
         it "has the right details" do
           expect(dependency).to be_a(Dependabot::Dependency)

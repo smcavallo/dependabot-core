@@ -9,8 +9,19 @@ require "dependabot/bundler/metadata_finder"
 require_common_spec "metadata_finders/shared_examples_for_metadata_finders"
 
 RSpec.describe Dependabot::Bundler::MetadataFinder do
-  it_behaves_like "a dependency metadata finder"
+  subject(:finder) do
+    described_class.new(dependency: dependency, credentials: credentials)
+  end
 
+  let(:dependency_name) { "business" }
+  let(:credentials) do
+    [{
+      "type" => "git_source",
+      "host" => "github.com",
+      "username" => "x-access-token",
+      "password" => "token"
+    }]
+  end
   let(:dependency) do
     Dependabot::Dependency.new(
       name: dependency_name,
@@ -22,19 +33,6 @@ RSpec.describe Dependabot::Bundler::MetadataFinder do
       package_manager: "bundler"
     )
   end
-  subject(:finder) do
-    described_class.new(dependency: dependency, credentials: credentials)
-  end
-
-  let(:credentials) do
-    [{
-      "type" => "git_source",
-      "host" => "github.com",
-      "username" => "x-access-token",
-      "password" => "token"
-    }]
-  end
-  let(:dependency_name) { "business" }
 
   before do
     stub_request(:get, "https://example.com/status").to_return(
@@ -49,6 +47,8 @@ RSpec.describe Dependabot::Bundler::MetadataFinder do
       headers: {}
     )
   end
+
+  it_behaves_like "a dependency metadata finder"
 
   describe "#source_url" do
     subject(:source_url) { finder.source_url }
@@ -159,7 +159,7 @@ RSpec.describe Dependabot::Bundler::MetadataFinder do
               :get,
               "https://gems.example.com/api/v1/gems/business.json"
             )
-          expect(WebMock).to_not have_requested(:get, rubygems_gemspec_url)
+          expect(WebMock).not_to have_requested(:get, rubygems_gemspec_url)
         end
 
         context "when with no source" do
@@ -178,7 +178,7 @@ RSpec.describe Dependabot::Bundler::MetadataFinder do
               .to eq("https://github.com/gocardless/business")
             expect(WebMock)
               .to have_requested(:get, "https://gems.greysteil.com/api/v1/gems/business.json")
-            expect(WebMock).to_not have_requested(:get, rubygems_gemspec_url)
+            expect(WebMock).not_to have_requested(:get, rubygems_gemspec_url)
           end
         end
       end
@@ -204,7 +204,7 @@ RSpec.describe Dependabot::Bundler::MetadataFinder do
               :get,
               "https://rubygems.org/api/v1/gems/business.json"
             )
-          expect(WebMock).to_not have_requested(:get, rubygems_gemspec_url)
+          expect(WebMock).not_to have_requested(:get, rubygems_gemspec_url)
         end
 
         context "when the response doesn't match" do

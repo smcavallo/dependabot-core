@@ -175,15 +175,11 @@ RSpec.describe Dependabot::Python::RequirementParser do
         end
 
         its([:hashes]) do
-          is_expected.to match_array(
-            [
-              { algorithm: "sha256", hash: "2ccb79b01" },
-              { algorithm: "sha256", hash: "2ccb79b02" }
-            ]
-          )
+          is_expected.to contain_exactly({ algorithm: "sha256", hash: "2ccb79b01" },
+                                         { algorithm: "sha256", hash: "2ccb79b02" })
         end
 
-        context "spread over multiple lines" do
+        context "when spread over multiple lines" do
           let(:line) do
             "luigi==0.1.0 \\\n" \
               "    --hash=sha256:2ccb79b01 \\\n" \
@@ -191,16 +187,12 @@ RSpec.describe Dependabot::Python::RequirementParser do
           end
 
           its([:hashes]) do
-            is_expected.to match_array(
-              [
-                { algorithm: "sha256", hash: "2ccb79b01" },
-                { algorithm: "sha256", hash: "2ccb79b02" }
-              ]
-            )
+            is_expected.to contain_exactly({ algorithm: "sha256", hash: "2ccb79b01" },
+                                           { algorithm: "sha256", hash: "2ccb79b02" })
           end
         end
 
-        context "and with marker" do
+        context "with marker" do
           let(:line) do
             "luigi==0.1.0 ; python_version=='2.7' " \
               "--hash=sha256:2ccb79b01 --hash=sha256:2ccb79b02"
@@ -215,16 +207,12 @@ RSpec.describe Dependabot::Python::RequirementParser do
           end
 
           its([:hashes]) do
-            is_expected.to match_array(
-              [
-                { algorithm: "sha256", hash: "2ccb79b01" },
-                { algorithm: "sha256", hash: "2ccb79b02" }
-              ]
-            )
+            is_expected.to contain_exactly({ algorithm: "sha256", hash: "2ccb79b01" },
+                                           { algorithm: "sha256", hash: "2ccb79b02" })
           end
         end
 
-        context "spread over multiple lines with marker" do
+        context "when spread over multiple lines with marker" do
           let(:line) do
             "luigi==0.1.0 ; python_version=='2.7' \\\n" \
               "    --hash=sha256:2ccb79b01 \\\n" \
@@ -240,12 +228,8 @@ RSpec.describe Dependabot::Python::RequirementParser do
           end
 
           its([:hashes]) do
-            is_expected.to match_array(
-              [
-                { algorithm: "sha256", hash: "2ccb79b01" },
-                { algorithm: "sha256", hash: "2ccb79b02" }
-              ]
-            )
+            is_expected.to contain_exactly({ algorithm: "sha256", hash: "2ccb79b01" },
+                                           { algorithm: "sha256", hash: "2ccb79b02" })
           end
         end
       end

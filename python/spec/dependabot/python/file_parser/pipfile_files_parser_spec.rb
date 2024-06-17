@@ -80,10 +80,10 @@ RSpec.describe Dependabot::Python::FileParser::PipfileFilesParser do
       end
 
       describe "a development and production dependency" do
+        subject { dependencies.find { |d| d.name == "py" } }
+
         let(:pipfile_fixture_name) { "prod_and_dev" }
         let(:lockfile_fixture_name) { "prod_and_dev.lock" }
-
-        subject { dependencies.find { |d| d.name == "py" } }
 
         its(:subdependency_metadata) do
           is_expected.to eq([{ production: true }, { production: false }])
@@ -129,7 +129,7 @@ RSpec.describe Dependabot::Python::FileParser::PipfileFilesParser do
         its(:length) { is_expected.to eq(11) }
       end
 
-      context "using arbitrary equality" do
+      context "when using arbitrary equality" do
         let(:pipfile_fixture_name) { "arbitrary_equality" }
         let(:lockfile_fixture_name) { "arbitrary_equality.lock" }
 
@@ -314,7 +314,7 @@ RSpec.describe Dependabot::Python::FileParser::PipfileFilesParser do
       let(:lockfile_fixture_name) { "only_dev.lock" }
 
       it "excludes the missing dependency" do
-        expect(dependencies.map(&:name)).to_not include("missing")
+        expect(dependencies.map(&:name)).not_to include("missing")
       end
 
       describe "the dependency" do
@@ -341,7 +341,7 @@ RSpec.describe Dependabot::Python::FileParser::PipfileFilesParser do
       let(:lockfile_fixture_name) { "git_source.lock" }
 
       it "excludes the git dependency" do
-        expect(dependencies.map(&:name)).to_not include("pythonfinder")
+        expect(dependencies.map(&:name)).not_to include("pythonfinder")
       end
 
       describe "the (non-git) dependency" do
@@ -444,13 +444,13 @@ RSpec.describe Dependabot::Python::FileParser::PipfileFilesParser do
     end
 
     context "with an empty requirement string" do
+      subject { dependencies.find { |d| d.name == "tensorflow-gpu" } }
+
       let(:pipfile_fixture_name) { "empty_requirement" }
       let(:files) { [pipfile] }
       let(:dependencies) do
         parser.dependency_set.dependencies.select(&:top_level?)
       end
-
-      subject { dependencies.find { |d| d.name == "tensorflow-gpu" } }
 
       let(:expected_requirements) do
         [{

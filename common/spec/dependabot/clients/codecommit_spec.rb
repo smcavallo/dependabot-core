@@ -31,12 +31,12 @@ RSpec.describe Dependabot::Clients::CodeCommit do
 
   before do
     allow_any_instance_of(
-      Dependabot::Clients::CodeCommit
+      described_class
     ).to receive(:cc_client).and_return(stubbed_cc_client)
   end
 
   describe "#fetch_commit" do
-    subject { client.fetch_commit(nil, branch) }
+    subject(:fetch_commit) { client.fetch_commit(nil, branch) }
 
     context "when a response is returned" do
       before do
@@ -51,7 +51,7 @@ RSpec.describe Dependabot::Clients::CodeCommit do
           )
       end
 
-      specify { expect { subject }.to_not raise_error }
+      specify { expect { fetch_commit }.not_to raise_error }
 
       it { is_expected.to eq("9c8376e9b2e943c2c72fac4b239876f377f0305a") }
 
@@ -73,7 +73,7 @@ RSpec.describe Dependabot::Clients::CodeCommit do
       end
 
       it "raises a helpful error" do
-        expect { subject }.to raise_error(
+        expect { fetch_commit }.to raise_error(
           Aws::CodeCommit::Errors::BranchDoesNotExistException
         )
       end

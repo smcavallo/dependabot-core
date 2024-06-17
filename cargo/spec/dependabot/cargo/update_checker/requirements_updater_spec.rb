@@ -33,9 +33,9 @@ RSpec.describe Dependabot::Cargo::UpdateChecker::RequirementsUpdater do
   describe "#updated_requirements" do
     subject { updater.updated_requirements.first }
 
-    specify { expect(updater.updated_requirements.count).to eq(1) }
-
     let(:req_string) { "^1.0.0" }
+
+    specify { expect(updater.updated_requirements.count).to eq(1) }
 
     context "when there is no latest version" do
       let(:target_version) { nil }
@@ -168,20 +168,40 @@ RSpec.describe Dependabot::Cargo::UpdateChecker::RequirementsUpdater do
         end
 
         context "when there were multiple range specifications" do
-          let(:req_string) { "> 1.0.0, < 1.2.0" }
+          context "with `less than`" do
+            let(:req_string) { "> 1.0.0, < 1.2.0" }
 
-          its([:requirement]) { is_expected.to eq("> 1.0.0, < 1.6.0") }
+            its([:requirement]) { is_expected.to eq("> 1.0.0, < 1.6.0") }
 
-          context "when already valid" do
-            let(:req_string) { "> 1.0.0, < 1.7.0" }
+            context "when already valid" do
+              let(:req_string) { "> 1.0.0, < 1.7.0" }
 
-            its([:requirement]) { is_expected.to eq(req_string) }
+              its([:requirement]) { is_expected.to eq(req_string) }
+            end
+
+            context "when including a pre-release" do
+              let(:req_string) { ">=1.2.0, <1.4.0-dev" }
+
+              its([:requirement]) { is_expected.to eq(">=1.2.0, <1.6.0") }
+            end
           end
 
-          context "when including a pre-release" do
-            let(:req_string) { ">=1.2.0, <1.4.0-dev" }
+          context "with `less than equal`" do
+            let(:req_string) { "> 1.0.0, <= 1.2.0" }
 
-            its([:requirement]) { is_expected.to eq(">=1.2.0, <1.6.0") }
+            its([:requirement]) { is_expected.to eq("> 1.0.0, <= 1.5.0") }
+
+            context "when already valid" do
+              let(:req_string) { "> 1.0.0, <= 1.7.0" }
+
+              its([:requirement]) { is_expected.to eq(req_string) }
+            end
+
+            context "when including a pre-release" do
+              let(:req_string) { ">=1.2.0, <=1.4.0-dev" }
+
+              its([:requirement]) { is_expected.to eq(">=1.2.0, <=1.5.0") }
+            end
           end
         end
 
@@ -218,22 +238,17 @@ RSpec.describe Dependabot::Cargo::UpdateChecker::RequirementsUpdater do
           let(:other_requirement_string) { "^0.*.*" }
 
           it "updates both requirements" do
-            expect(updater.updated_requirements).to match_array(
-              [
-                {
-                  file: "Cargo.toml",
-                  requirement: "^1.5.0",
-                  groups: [],
-                  source: nil
-                },
-                {
-                  file: "another/Cargo.toml",
-                  requirement: "^1.*.*",
-                  groups: [],
-                  source: nil
-                }
-              ]
-            )
+            expect(updater.updated_requirements).to contain_exactly({
+              file: "Cargo.toml",
+              requirement: "^1.5.0",
+              groups: [],
+              source: nil
+            }, {
+              file: "another/Cargo.toml",
+              requirement: "^1.*.*",
+              groups: [],
+              source: nil
+            })
           end
         end
 
@@ -388,22 +403,17 @@ RSpec.describe Dependabot::Cargo::UpdateChecker::RequirementsUpdater do
           let(:other_requirement_string) { "^0.*.*" }
 
           it "updates only the required requirements" do
-            expect(updater.updated_requirements).to match_array(
-              [
-                {
-                  file: "Cargo.toml",
-                  requirement: req_string,
-                  groups: [],
-                  source: nil
-                },
-                {
-                  file: "another/Cargo.toml",
-                  requirement: "^1.*.*",
-                  groups: [],
-                  source: nil
-                }
-              ]
-            )
+            expect(updater.updated_requirements).to contain_exactly({
+              file: "Cargo.toml",
+              requirement: req_string,
+              groups: [],
+              source: nil
+            }, {
+              file: "another/Cargo.toml",
+              requirement: "^1.*.*",
+              groups: [],
+              source: nil
+            })
           end
         end
       end

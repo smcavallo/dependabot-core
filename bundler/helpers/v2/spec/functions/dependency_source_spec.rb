@@ -40,7 +40,7 @@ RSpec.describe Functions::DependencySource do
     end
 
     it "returns all versions from the private source" do
-      is_expected.to eq([
+      expect(private_registry_versions).to eq([
         Gem::Version.new("1.5.0"),
         Gem::Version.new("1.9.0"),
         Gem::Version.new("1.10.0.beta")
@@ -51,7 +51,7 @@ RSpec.describe Functions::DependencySource do
       let(:project_name) { "specified_default_source_no_lockfile" }
 
       it "returns all versions from the private source" do
-        is_expected.to eq([
+        expect(private_registry_versions).to eq([
           Gem::Version.new("1.5.0"),
           Gem::Version.new("1.9.0"),
           Gem::Version.new("1.10.0.beta")
@@ -180,7 +180,7 @@ RSpec.describe Functions::DependencySource do
       end
 
       it "returns all versions from the private source" do
-        expect(private_registry_versions.length).to eql(70)
+        expect(private_registry_versions.length).to be(70)
         expect(private_registry_versions.min).to eql(Gem::Version.new("1.0.0"))
         expect(private_registry_versions.max).to eql(Gem::Version.new("3.5.2"))
       end

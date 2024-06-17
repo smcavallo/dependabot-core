@@ -411,7 +411,7 @@ RSpec.describe Dependabot::PullRequestCreator::Github do
         expect { creator.create }.to raise_error(Octokit::UnprocessableEntity)
       end
 
-      context "because the branch is a superstring of another branch" do
+      context "when the branch is a superstring of another branch" do
         before do
           allow(SecureRandom).to receive(:hex).and_return("rand")
 
@@ -469,7 +469,7 @@ RSpec.describe Dependabot::PullRequestCreator::Github do
         service_pack_response.gsub!("heads/rubocop", "heads/#{branch_name}")
       end
 
-      context "but a PR to this branch doesn't" do
+      context "when a PR to this branch doesn't exist" do
         before do
           url = "#{repo_api_url}/pulls?head=gocardless:#{branch_name}" \
                 "&state=all"
@@ -501,7 +501,7 @@ RSpec.describe Dependabot::PullRequestCreator::Github do
         end
       end
 
-      context "and a PR to this branch already exists" do
+      context "when a PR to this branch already exists" do
         before do
           url = "#{repo_api_url}/pulls?head=gocardless:#{branch_name}" \
                 "&state=all"
@@ -512,10 +512,10 @@ RSpec.describe Dependabot::PullRequestCreator::Github do
         it "raises a helpful error" do
           expect { creator.create }
             .to raise_error(Dependabot::PullRequestCreator::UnmergedPRExists, /1347/)
-          expect(WebMock).to_not have_requested(:post, "#{repo_api_url}/pulls")
+          expect(WebMock).not_to have_requested(:post, "#{repo_api_url}/pulls")
         end
 
-        context "but isn't initially returned (a race)" do
+        context "when the PR isn't initially returned (a race)" do
           before do
             url = "#{repo_api_url}/pulls?head=gocardless:#{branch_name}" \
                   "&state=all"
@@ -543,7 +543,7 @@ RSpec.describe Dependabot::PullRequestCreator::Github do
           end
         end
 
-        context "but is merged" do
+        context "when the PR is merged" do
           before do
             url = "#{repo_api_url}/pulls?head=gocardless:#{branch_name}" \
                   "&state=all"
@@ -586,10 +586,10 @@ RSpec.describe Dependabot::PullRequestCreator::Github do
               expect { creator.create }
                 .to raise_error(Dependabot::PullRequestCreator::BaseCommitNotUpToDate)
               expect(WebMock)
-                .to_not have_requested(:post, "#{repo_api_url}/pulls")
+                .not_to have_requested(:post, "#{repo_api_url}/pulls")
             end
 
-            context "and the commit we're branching off of is up-to-date" do
+            context "when the commit we're branching off of is up-to-date" do
               let(:base_commit) { "7bb4e41ce5164074a0920d5b5770d196b4d90104" }
 
               it "creates a PR" do
@@ -792,7 +792,7 @@ RSpec.describe Dependabot::PullRequestCreator::Github do
           )
       end
 
-      context "that doesn't exist" do
+      context "when the PR doesn't exist" do
         before do
           stub_request(:post, "#{repo_api_url}/pulls")
             .to_return(status: 422,
@@ -858,7 +858,7 @@ RSpec.describe Dependabot::PullRequestCreator::Github do
         creator.create
 
         expect(WebMock)
-          .to_not have_requested(:post, "#{repo_api_url}/labels")
+          .not_to have_requested(:post, "#{repo_api_url}/labels")
       end
 
       it "labels the PR correctly" do
@@ -877,7 +877,7 @@ RSpec.describe Dependabot::PullRequestCreator::Github do
         creator.create
 
         expect(WebMock)
-          .to_not have_requested(:post, "#{repo_api_url}/labels")
+          .not_to have_requested(:post, "#{repo_api_url}/labels")
       end
 
       it "labels the PR correctly" do
@@ -888,7 +888,7 @@ RSpec.describe Dependabot::PullRequestCreator::Github do
           .with(body: '["wontfix"]')
       end
 
-      context "that doesn't exist" do
+      context "when the label doesn't exist" do
         let(:custom_labels) { ["non-existent"] }
 
         # Alternatively we could create the label (current choice isn't fixed)
@@ -896,14 +896,14 @@ RSpec.describe Dependabot::PullRequestCreator::Github do
           creator.create
 
           expect(WebMock)
-            .to_not have_requested(:post, "#{repo_api_url}/labels")
+            .not_to have_requested(:post, "#{repo_api_url}/labels")
         end
 
         it "does not label the PR" do
           creator.create
 
           expect(WebMock)
-            .to_not have_requested(:post, "#{repo_api_url}/issues/1347/labels")
+            .not_to have_requested(:post, "#{repo_api_url}/issues/1347/labels")
         end
       end
 
@@ -939,7 +939,7 @@ RSpec.describe Dependabot::PullRequestCreator::Github do
           ).with(body: { reviewers: ["greysteil"], team_reviewers: [] }.to_json)
       end
 
-      context "that can't be added" do
+      context "when the reviewer can't be added" do
         before do
           stub_request(:post, "#{repo_api_url}/pulls/1347/requested_reviewers")
             .to_return(status: 422,
@@ -994,7 +994,7 @@ RSpec.describe Dependabot::PullRequestCreator::Github do
           .with(body: { assignees: ["greysteil"] }.to_json)
       end
 
-      context "and GitHub 404s" do
+      context "when GitHub returns a 404" do
         before do
           stub_request(:post, "#{repo_api_url}/issues/1347/assignees")
             .to_return(status: 404)
@@ -1006,6 +1006,40 @@ RSpec.describe Dependabot::PullRequestCreator::Github do
           expect(WebMock)
             .to have_requested(:post, "#{repo_api_url}/issues/1347/assignees")
             .with(body: { assignees: ["greysteil"] }.to_json)
+        end
+      end
+
+      context "when GitHub returns a 422 Validation Failed" do
+        let(:assignees) { %w(greysteil nishnha) }
+
+        context "with a known error message" do
+          before do
+            stub_request(:post, "#{repo_api_url}/issues/1347/assignees")
+              .to_return(status: 422, body: "{\"Error summary:\":\"Could not add assignees: Something went wrong\"}")
+          end
+
+          it "quietly ignores the 422" do
+            expect { creator.create }.not_to raise_error
+
+            expect(WebMock)
+              .to have_requested(:post, "#{repo_api_url}/issues/1347/assignees")
+              .with(body: { assignees: %w(greysteil nishnha) }.to_json)
+          end
+        end
+
+        context "with an unknown error message" do
+          before do
+            stub_request(:post, "#{repo_api_url}/issues/1347/assignees")
+              .to_return(status: 422)
+          end
+
+          it "re-raises the error" do
+            expect { creator.create }.to raise_error(Dependabot::PullRequestCreator::AnnotationError)
+
+            expect(WebMock)
+              .to have_requested(:post, "#{repo_api_url}/issues/1347/assignees")
+              .with(body: { assignees: %w(greysteil nishnha) }.to_json)
+          end
         end
       end
     end
@@ -1029,7 +1063,7 @@ RSpec.describe Dependabot::PullRequestCreator::Github do
           ).with(body: { milestone: 5 }.to_json)
       end
 
-      context "but can't be specified for some reason" do
+      context "when the milestone can't be specified for some reason" do
         before do
           stub_request(:patch, "#{repo_api_url}/issues/1347")
             .to_return(status: 422,

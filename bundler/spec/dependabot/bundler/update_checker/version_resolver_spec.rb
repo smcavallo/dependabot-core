@@ -50,13 +50,13 @@ RSpec.describe Dependabot::Bundler::UpdateChecker::VersionResolver do
   let(:requirement_string) { ">= 0" }
 
   describe "#latest_resolvable_version_details" do
-    subject { resolver.latest_resolvable_version_details }
+    subject(:latest_resolvable_version_details) { resolver.latest_resolvable_version_details }
 
     context "with an unconfigured private rubygems source" do
       let(:dependency_files) { bundler_project_dependency_files("private_gem_source") }
 
       it "raises a PrivateSourceAuthenticationFailure error" do
-        expect { subject }
+        expect { latest_resolvable_version_details }
           .to raise_error(Dependabot::PrivateSourceAuthenticationFailure) do |error|
           expect(error.message).to include(": rubygems.pkg.github.com")
         end
@@ -89,7 +89,13 @@ RSpec.describe Dependabot::Bundler::UpdateChecker::VersionResolver do
 
         let(:dependency_files) { bundler_project_dependency_files("blocked_by_subdep") }
 
-        its([:version]) { is_expected.to eq(Gem::Version.new("1.1.0")) }
+        it "only upgrades as far as the subdep allows", :bundler_v1_only do
+          expect(latest_resolvable_version_details[:version]).to eq(Gem::Version.new("1.1.0"))
+        end
+
+        it "is still able to upgrade to the latest version by upgrading the subdep as well", :bundler_v2_only do
+          expect(latest_resolvable_version_details[:version]).to eq(Gem::Version.new("2.0.0"))
+        end
       end
 
       context "when that only appears in the lockfile" do
@@ -108,7 +114,7 @@ RSpec.describe Dependabot::Bundler::UpdateChecker::VersionResolver do
 
           it "is updated" do
             skip("skipped due to https://github.com/dependabot/dependabot-core/issues/2364")
-            expect(subject.version).to eq(Gem::Version.new("1.10.9"))
+            expect(latest_resolvable_version_details.version).to eq(Gem::Version.new("1.10.9"))
           end
         end
       end
@@ -122,9 +128,9 @@ RSpec.describe Dependabot::Bundler::UpdateChecker::VersionResolver do
 
         context "when attempting to update Bundler" do
           let(:dependency_name) { "bundler" }
-          include_context "when stubbing rubygems versions api"
-
           let(:dependency_files) { bundler_project_dependency_files("bundler_specified") }
+
+          include_context "when stubbing rubygems versions api"
 
           its([:version]) { is_expected.to eq(Gem::Version.new("1.16.3")) }
 
@@ -144,7 +150,7 @@ RSpec.describe Dependabot::Bundler::UpdateChecker::VersionResolver do
 
             it "is nil" do
               skip("skipped due to https://github.com/dependabot/dependabot-core/issues/2364")
-              is_expected.to be_nil
+              expect(latest_resolvable_version_details).to be_nil
             end
           end
         end
@@ -164,7 +170,7 @@ RSpec.describe Dependabot::Bundler::UpdateChecker::VersionResolver do
           let(:dependency_files) { bundler_project_dependency_files("bundler_specified") }
 
           it "returns nil as resolution returns the bundler version installed by core" do
-            expect(subject).to be_nil
+            expect(latest_resolvable_version_details).to be_nil
           end
         end
       end
@@ -185,7 +191,7 @@ RSpec.describe Dependabot::Bundler::UpdateChecker::VersionResolver do
         let(:dependency_files) { bundler_project_dependency_files("requires_bundler") }
 
         it "raises a DependencyFileNotResolvable error" do
-          expect { subject }
+          expect { latest_resolvable_version_details }
             .to raise_error(Dependabot::DependencyFileNotResolvable)
         end
       end
@@ -197,7 +203,7 @@ RSpec.describe Dependabot::Bundler::UpdateChecker::VersionResolver do
         let(:dependency_files) { bundler_project_dependency_files("requires_bundler") }
 
         it "resolves version" do
-          expect(subject[:version]).to eq(Gem::Version.new("3.0.0"))
+          expect(latest_resolvable_version_details[:version]).to eq(Gem::Version.new("3.0.0"))
         end
       end
 
@@ -235,13 +241,19 @@ RSpec.describe Dependabot::Bundler::UpdateChecker::VersionResolver do
         end
       end
 
-      context "with no update possible due to a version conflict" do
+      context "when upgrading needs to unlock subdeps" do
         let(:dependency_name) { "rspec-mocks" }
         let(:requirement_string) { ">= 0" }
 
         let(:dependency_files) { bundler_project_dependency_files("version_conflict_with_listed_subdep") }
 
-        its([:version]) { is_expected.to eq(Gem::Version.new("3.6.0")) }
+        it "does not allow the upgrade", :bundler_v1_only do
+          expect(latest_resolvable_version_details[:version]).to eq(Gem::Version.new("3.6.0"))
+        end
+
+        it "is still able to upgrade", :bundler_v2_only do
+          expect(latest_resolvable_version_details[:version]).to be > Gem::Version.new("3.6.0")
+        end
       end
 
       context "with a legacy Ruby which disallows the latest version" do
@@ -355,7 +367,7 @@ RSpec.describe Dependabot::Bundler::UpdateChecker::VersionResolver do
         let(:dependency_files) { bundler_project_dependency_files("exec_error_no_lockfile") }
 
         it "raises a DependencyFileNotEvaluatable error" do
-          expect { subject }
+          expect { latest_resolvable_version_details }
             .to raise_error(Dependabot::DependencyFileNotEvaluatable)
         end
       end
@@ -366,7 +378,7 @@ RSpec.describe Dependabot::Bundler::UpdateChecker::VersionResolver do
       let(:requirement_string) { "~> 1.4" }
 
       it "raises a DependencyFileNotResolvable error" do
-        expect { subject }
+        expect { latest_resolvable_version_details }
           .to raise_error(Dependabot::DependencyFileNotResolvable)
       end
     end
@@ -375,10 +387,10 @@ RSpec.describe Dependabot::Bundler::UpdateChecker::VersionResolver do
       let(:dependency_files) { bundler_project_dependency_files("includes_requires_gemfile") }
 
       it "raises a useful error" do
-        expect { subject }
+        expect { latest_resolvable_version_details }
           .to raise_error(Dependabot::DependencyFileNotEvaluatable) do |error|
           # Test that the temporary path isn't included in the error message
-          expect(error.message).to_not include("dependabot_20")
+          expect(error.message).not_to include("dependabot_20")
         end
       end
     end
@@ -390,7 +402,7 @@ RSpec.describe Dependabot::Bundler::UpdateChecker::VersionResolver do
         let(:dependency_files) { bundler_project_dependency_files("path_source_not_reachable") }
 
         it "raises a PathDependenciesNotReachable error" do
-          expect { subject }
+          expect { latest_resolvable_version_details }
             .to raise_error(Dependabot::PathDependenciesNotReachable)
         end
       end
@@ -471,7 +483,7 @@ RSpec.describe Dependabot::Bundler::UpdateChecker::VersionResolver do
 
         it "is nil" do
           skip("skipped due to https://github.com/dependabot/dependabot-core/issues/2364")
-          is_expected.to be_nil
+          expect(latest_resolvable_version_details).to be_nil
         end
       end
 

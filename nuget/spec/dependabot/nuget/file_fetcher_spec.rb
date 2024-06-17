@@ -9,21 +9,6 @@ require "json"
 require_common_spec "file_fetchers/shared_examples_for_file_fetchers"
 
 RSpec.describe Dependabot::Nuget::FileFetcher do
-  it_behaves_like "a dependency file fetcher"
-
-  let(:source) do
-    Dependabot::Source.new(
-      provider: "github",
-      repo: "gocardless/bump",
-      directory: directory
-    )
-  end
-  let(:file_fetcher_instance) do
-    described_class.new(source: source, credentials: credentials)
-  end
-  let(:directory) { "/" }
-  let(:github_url) { "https://api.github.com/" }
-  let(:url) { github_url + "repos/gocardless/bump/contents/" }
   let(:credentials) do
     [{
       "type" => "git_source",
@@ -32,8 +17,19 @@ RSpec.describe Dependabot::Nuget::FileFetcher do
       "password" => "token"
     }]
   end
-
-  before { allow(file_fetcher_instance).to receive(:commit).and_return("sha") }
+  let(:url) { github_url + "repos/gocardless/bump/contents/" }
+  let(:github_url) { "https://api.github.com/" }
+  let(:directory) { "/" }
+  let(:file_fetcher_instance) do
+    described_class.new(source: source, credentials: credentials)
+  end
+  let(:source) do
+    Dependabot::Source.new(
+      provider: "github",
+      repo: "gocardless/bump",
+      directory: directory
+    )
+  end
 
   before do
     allow(file_fetcher_instance).to receive(:commit).and_return("sha")
@@ -43,7 +39,10 @@ RSpec.describe Dependabot::Nuget::FileFetcher do
       .to_return(
         status: 404
       )
+    allow(file_fetcher_instance).to receive(:commit).and_return("sha")
   end
+
+  it_behaves_like "a dependency file fetcher"
 
   context "with a .csproj" do
     before do
@@ -154,7 +153,7 @@ RSpec.describe Dependabot::Nuget::FileFetcher do
       end
     end
 
-    context "that imports another project" do
+    context "when another project is imported" do
       before do
         stub_request(:get, File.join(url, "Nancy.csproj?ref=sha"))
           .with(headers: { "Authorization" => "token token" })
@@ -177,7 +176,7 @@ RSpec.describe Dependabot::Nuget::FileFetcher do
           .to match_array(%w(Nancy.csproj commonprops.props))
       end
 
-      context "that imports itself" do
+      context "when itself is imported" do
         before do
           stub_request(:get, File.join(url, "commonprops.props?ref=sha"))
             .with(headers: { "Authorization" => "token token" })
@@ -195,7 +194,7 @@ RSpec.describe Dependabot::Nuget::FileFetcher do
         end
       end
 
-      context "that imports another (granchild) file" do
+      context "when another (grandchild) file is imported" do
         before do
           stub_request(:get, File.join(url, "commonprops.props?ref=sha"))
             .with(headers: { "Authorization" => "token token" })
@@ -331,7 +330,7 @@ RSpec.describe Dependabot::Nuget::FileFetcher do
     end
   end
 
-  context "directory-relative files can be found when starting in a subdirectory" do
+  context "when directory-relative files can be found when starting in a subdirectory" do
     let(:directory) { "/src/some-project/" }
 
     before do
@@ -397,7 +396,7 @@ RSpec.describe Dependabot::Nuget::FileFetcher do
     end
   end
 
-  context "from a sub-directory with Directory.Build.props further up the tree" do
+  context "when working from a sub-directory with Directory.Build.props further up the tree" do
     let(:directory) { "/src" }
 
     before do
