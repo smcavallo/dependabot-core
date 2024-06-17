@@ -8,11 +8,6 @@ require "dependabot/composer/file_parser"
 require_common_spec "file_parsers/shared_examples_for_file_parsers"
 
 RSpec.describe Dependabot::Composer::FileParser do
-  it_behaves_like "a dependency file parser"
-
-  let(:files) { project_dependency_files(project_name) }
-  let(:project_name) { "minor_version" }
-  let(:parser) { described_class.new(dependency_files: files, source: source) }
   let(:source) do
     Dependabot::Source.new(
       provider: "github",
@@ -20,6 +15,11 @@ RSpec.describe Dependabot::Composer::FileParser do
       directory: "/"
     )
   end
+  let(:parser) { described_class.new(dependency_files: files, source: source) }
+  let(:project_name) { "minor_version" }
+  let(:files) { project_dependency_files(project_name) }
+
+  it_behaves_like "a dependency file parser"
 
   describe "parse" do
     subject(:dependencies) { parser.parse }
@@ -50,7 +50,7 @@ RSpec.describe Dependabot::Composer::FileParser do
       end
     end
 
-    context "null dependencies with lockfile" do
+    context "when using null dependencies with lockfile" do
       let(:project_name) { "null_dependencies_with_lockfile" }
       let(:name) { "phpunit/phpunit" }
       let(:type) { "development" }
@@ -110,7 +110,7 @@ RSpec.describe Dependabot::Composer::FileParser do
       end
     end
 
-    context "for development dependencies" do
+    context "when using development dependencies" do
       let(:project_name) { "development_dependencies" }
 
       it "includes development dependencies" do
@@ -227,7 +227,7 @@ RSpec.describe Dependabot::Composer::FileParser do
           )
         end
 
-        context "specified as an alias" do
+        context "when the requirement specified as an alias" do
           let(:project_name) { "git_source_alias" }
 
           its(:requirements) do
@@ -247,7 +247,7 @@ RSpec.describe Dependabot::Composer::FileParser do
           end
         end
 
-        context "due to a stability flag" do
+        context "when dealing with a stability flag" do
           subject { dependencies.last }
 
           let(:project_name) { "git_source_transitive" }
@@ -326,7 +326,7 @@ RSpec.describe Dependabot::Composer::FileParser do
         end
       end
 
-      context "for development dependencies" do
+      context "when using development dependencies" do
         let(:project_name) { "development_dependencies_without_lockfile" }
 
         it "includes development dependencies" do

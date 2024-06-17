@@ -24,6 +24,12 @@ RSpec.describe Dependabot::MetadataFinders::Base do
       package_manager: "bundler"
     )
   end
+  let(:source) do
+    Dependabot::Source.new(
+      provider: "github",
+      repo: "gocardless/#{dependency_name}"
+    )
+  end
   let(:dependency_name) { "business" }
   let(:dependency_version) { "1.4.0" }
   let(:dependency_previous_version) { "1.0.0" }
@@ -35,14 +41,8 @@ RSpec.describe Dependabot::MetadataFinders::Base do
       "password" => "token"
     }]
   end
-  before { allow(finder).to receive(:source).and_return(source) }
 
-  let(:source) do
-    Dependabot::Source.new(
-      provider: "github",
-      repo: "gocardless/#{dependency_name}"
-    )
-  end
+  before { allow(finder).to receive(:source).and_return(source) }
 
   describe "#source_url" do
     subject(:source_url) { finder.source_url }
@@ -66,7 +66,7 @@ RSpec.describe Dependabot::MetadataFinders::Base do
       it { is_expected.to be_nil }
     end
 
-    context "and a directory" do
+    context "when there is a directory" do
       before { source.directory = "my/directory" }
 
       it "doesn't include the directory (since it is unreliable)" do
@@ -74,7 +74,7 @@ RSpec.describe Dependabot::MetadataFinders::Base do
           .to eq("https://github.com/gocardless/business")
       end
 
-      context "for a package manager with reliable source directories" do
+      context "when there is a package manager with reliable source directories" do
         before do
           allow(finder)
             .to receive(:reliable_source_directory?)

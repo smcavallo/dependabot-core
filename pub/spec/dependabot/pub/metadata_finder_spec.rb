@@ -7,7 +7,30 @@ require "dependabot/pub/metadata_finder"
 require_common_spec "metadata_finders/shared_examples_for_metadata_finders"
 
 RSpec.describe Dependabot::Pub::MetadataFinder do
-  it_behaves_like "a dependency metadata finder"
+  let(:finder) do
+    described_class.new(dependency: dependency, credentials: credentials)
+  end
+  let(:credentials) do
+    [{
+      "type" => "git_source",
+      "host" => "github.com",
+      "username" => "x-access-token",
+      "password" => "token"
+    }]
+  end
+  let(:dependency) do
+    Dependabot::Dependency.new(
+      name: "retry",
+      version: "1.3.0",
+      requirements: [{
+        file: "pubspec.yaml",
+        requirement: "~3.0.0",
+        groups: [],
+        source: nil
+      }],
+      package_manager: "pub"
+    )
+  end
 
   before do
     stub_request(:get, "https://pub.dev/api/packages/#{dependency.name}").to_return(
@@ -26,32 +49,7 @@ RSpec.describe Dependabot::Pub::MetadataFinder do
     end
   end
 
-  let(:dependency) do
-    Dependabot::Dependency.new(
-      name: "retry",
-      version: "1.3.0",
-      requirements: [{
-        file: "pubspec.yaml",
-        requirement: "~3.0.0",
-        groups: [],
-        source: nil
-      }],
-      package_manager: "pub"
-    )
-  end
-
-  let(:credentials) do
-    [{
-      "type" => "git_source",
-      "host" => "github.com",
-      "username" => "x-access-token",
-      "password" => "token"
-    }]
-  end
-
-  let(:finder) do
-    described_class.new(dependency: dependency, credentials: credentials)
-  end
+  it_behaves_like "a dependency metadata finder"
 
   describe "#source_url" do
     it "finds the repository" do

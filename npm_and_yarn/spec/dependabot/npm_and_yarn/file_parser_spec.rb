@@ -8,22 +8,6 @@ require "dependabot/npm_and_yarn/file_parser"
 require_common_spec "file_parsers/shared_examples_for_file_parsers"
 
 RSpec.describe Dependabot::NpmAndYarn::FileParser do
-  it_behaves_like "a dependency file parser"
-
-  let(:parser) do
-    described_class.new(
-      dependency_files: files,
-      source: source,
-      credentials: credentials
-    )
-  end
-  let(:source) do
-    Dependabot::Source.new(
-      provider: "github",
-      repo: "gocardless/bump",
-      directory: "/"
-    )
-  end
   let(:credentials) do
     [Dependabot::Credential.new({
       "type" => "git_source",
@@ -32,6 +16,22 @@ RSpec.describe Dependabot::NpmAndYarn::FileParser do
       "password" => "token"
     })]
   end
+  let(:source) do
+    Dependabot::Source.new(
+      provider: "github",
+      repo: "gocardless/bump",
+      directory: "/"
+    )
+  end
+  let(:parser) do
+    described_class.new(
+      dependency_files: files,
+      source: source,
+      credentials: credentials
+    )
+  end
+
+  it_behaves_like "a dependency file parser"
 
   describe "parse" do
     subject(:dependencies) { parser.parse }
@@ -120,21 +120,21 @@ RSpec.describe Dependabot::NpmAndYarn::FileParser do
           its(:length) { is_expected.to eq(2) }
         end
 
-        context "that contains an empty version string for a sub-dep" do
+        context "when containing an empty version string for a sub-dep" do
           let(:files) { project_dependency_files("npm6/empty_version") }
 
           its(:length) { is_expected.to eq(2) }
         end
 
-        context "that contains a version requirement string" do
-          let(:files) { project_dependency_files("npm6/invalid_version_requirement") }
-
+        context "when containing a version requirement string" do
           subject { dependencies.find { |d| d.name == "etag" } }
 
-          it { is_expected.to eq(nil) }
+          let(:files) { project_dependency_files("npm6/invalid_version_requirement") }
+
+          it { is_expected.to be_nil }
         end
 
-        context "that has URL versions (i.e., is from a bad version of npm)" do
+        context "when containing URL versions (i.e., is from a bad version of npm)" do
           let(:files) { project_dependency_files("npm6/url_versions") }
 
           its(:length) { is_expected.to eq(1) }
@@ -406,7 +406,7 @@ RSpec.describe Dependabot::NpmAndYarn::FileParser do
                 )
               end
 
-              context "excluding the auth token" do
+              context "when excluding the auth token" do
                 let(:credentials) do
                   [Dependabot::Credential.new({
                     "type" => "npm_registry",
@@ -491,7 +491,7 @@ RSpec.describe Dependabot::NpmAndYarn::FileParser do
 
           it "doesn't include the path-based dependency" do
             expect(top_level_dependencies.length).to eq(3)
-            expect(top_level_dependencies.map(&:name)).to_not include("etag")
+            expect(top_level_dependencies.map(&:name)).not_to include("etag")
           end
         end
 
@@ -531,7 +531,7 @@ RSpec.describe Dependabot::NpmAndYarn::FileParser do
 
               it "is excluded" do
                 expect(top_level_dependencies.map(&:name))
-                  .to_not include("is-number")
+                  .not_to include("is-number")
               end
             end
           end
@@ -569,8 +569,9 @@ RSpec.describe Dependabot::NpmAndYarn::FileParser do
             end
           end
 
-          context "that specifies a semver requirement" do
+          context "when specifying a semver requirement" do
             let(:files) { project_dependency_files("npm6/github_dependency_semver") }
+            let(:git_pack_fixture_name) { "is-number" }
 
             before do
               git_url = "https://github.com/jonschlinkert/is-number.git"
@@ -586,8 +587,6 @@ RSpec.describe Dependabot::NpmAndYarn::FileParser do
                   headers: git_header
                 )
             end
-
-            let(:git_pack_fixture_name) { "is-number" }
 
             its(:length) { is_expected.to eq(1) }
 
@@ -638,7 +637,7 @@ RSpec.describe Dependabot::NpmAndYarn::FileParser do
             end
           end
 
-          context "that doesn't specify a reference" do
+          context "when not specifying a reference" do
             let(:files) { project_dependency_files("npm6/github_dependency_no_ref") }
 
             its(:length) { is_expected.to eq(1) }
@@ -671,7 +670,7 @@ RSpec.describe Dependabot::NpmAndYarn::FileParser do
             end
           end
 
-          context "that is specified with its shortname" do
+          context "when specifying with its shortname" do
             let(:files) { project_dependency_files("npm6/github_shortname") }
 
             its(:length) { is_expected.to eq(1) }
@@ -768,7 +767,7 @@ RSpec.describe Dependabot::NpmAndYarn::FileParser do
             end
           end
 
-          context "that does flat resolution" do
+          context "when it does flat resolution" do
             let(:project_name) { "npm6/flat_resolution" }
 
             its(:length) { is_expected.to eq(0) }
@@ -802,7 +801,7 @@ RSpec.describe Dependabot::NpmAndYarn::FileParser do
           end
         end
 
-        context "that has relative resolved paths" do
+        context "when it has relative resolved paths" do
           let(:files) { project_dependency_files("npm4/shrinkwrap_relative") }
 
           its(:length) { is_expected.to eq(2) }
@@ -953,7 +952,7 @@ RSpec.describe Dependabot::NpmAndYarn::FileParser do
           end
         end
 
-        context "that specifies a semver requirement" do
+        context "when it specifies a semver requirement" do
           let(:files) { project_dependency_files("yarn/github_dependency_yarn_semver") }
 
           its(:length) { is_expected.to eq(1) }
@@ -1073,7 +1072,7 @@ RSpec.describe Dependabot::NpmAndYarn::FileParser do
 
           it "doesn't include the path-based dependency" do
             expect(top_level_dependencies.length).to eq(3)
-            expect(top_level_dependencies.map(&:name)).to_not include("etag")
+            expect(top_level_dependencies.map(&:name)).not_to include("etag")
           end
         end
 
@@ -1086,7 +1085,7 @@ RSpec.describe Dependabot::NpmAndYarn::FileParser do
           end
 
           it "doesn't include the submodule dependency" do
-            expect(dependencies.map(&:name)).to_not include("pino-pretty")
+            expect(dependencies.map(&:name)).not_to include("pino-pretty")
           end
         end
 
@@ -1095,7 +1094,7 @@ RSpec.describe Dependabot::NpmAndYarn::FileParser do
 
           it "doesn't include the link dependency" do
             expect(top_level_dependencies.length).to eq(3)
-            expect(top_level_dependencies.map(&:name)).to_not include("etag")
+            expect(top_level_dependencies.map(&:name)).not_to include("etag")
           end
         end
 
@@ -1105,7 +1104,7 @@ RSpec.describe Dependabot::NpmAndYarn::FileParser do
           it "doesn't include the aliased dependency" do
             expect(top_level_dependencies.length).to eq(1)
             expect(top_level_dependencies.map(&:name)).to eq(["etag"])
-            expect(dependencies.map(&:name)).to_not include("my-fetch-factory")
+            expect(dependencies.map(&:name)).not_to include("my-fetch-factory")
           end
         end
 
@@ -1115,7 +1114,7 @@ RSpec.describe Dependabot::NpmAndYarn::FileParser do
           it "doesn't include the aliased dependency" do
             expect(top_level_dependencies.length).to eq(1)
             expect(top_level_dependencies.map(&:name)).to eq(["etag"])
-            expect(dependencies.map(&:name)).to_not include("my-fetch-factory")
+            expect(dependencies.map(&:name)).not_to include("my-fetch-factory")
           end
         end
 
@@ -1242,7 +1241,7 @@ RSpec.describe Dependabot::NpmAndYarn::FileParser do
               end
             end
 
-            context "specified with https and a colon (supported by npm)" do
+            context "when specified with https and a colon (supported by npm)" do
               let(:files) { project_dependency_files("npm6/git_dependency_with_auth") }
 
               describe "the git dependency" do
@@ -1304,19 +1303,17 @@ RSpec.describe Dependabot::NpmAndYarn::FileParser do
             its(:version) { is_expected.to eq("1.8.1") }
 
             its(:requirements) do
-              is_expected.to match_array(
-                [{
-                  requirement: "^1.1.0",
-                  file: "packages/package1/package.json",
-                  groups: ["devDependencies"],
-                  source: { type: "registry", url: "https://registry.yarnpkg.com" }
-                }, {
-                  requirement: "^1.0.0",
-                  file: "other_package/package.json",
-                  groups: ["devDependencies"],
-                  source: { type: "registry", url: "https://registry.yarnpkg.com" }
-                }]
-              )
+              is_expected.to contain_exactly({
+                requirement: "^1.1.0",
+                file: "packages/package1/package.json",
+                groups: ["devDependencies"],
+                source: { type: "registry", url: "https://registry.yarnpkg.com" }
+              }, {
+                requirement: "^1.0.0",
+                file: "other_package/package.json",
+                groups: ["devDependencies"],
+                source: { type: "registry", url: "https://registry.yarnpkg.com" }
+              })
             end
           end
 
@@ -1328,24 +1325,22 @@ RSpec.describe Dependabot::NpmAndYarn::FileParser do
             its(:version) { is_expected.to eq("1.2.0") }
 
             its(:requirements) do
-              is_expected.to match_array(
-                [{
-                  requirement: "1.2.0",
-                  file: "package.json",
-                  groups: ["dependencies"],
-                  source: { type: "registry", url: "https://registry.yarnpkg.com" }
-                }, {
-                  requirement: "^1.2.1",
-                  file: "other_package/package.json",
-                  groups: ["dependencies"],
-                  source: { type: "registry", url: "https://registry.yarnpkg.com" }
-                }, {
-                  requirement: "^1.2.1",
-                  file: "packages/package1/package.json",
-                  groups: ["dependencies"],
-                  source: { type: "registry", url: "https://registry.yarnpkg.com" }
-                }]
-              )
+              is_expected.to contain_exactly({
+                requirement: "1.2.0",
+                file: "package.json",
+                groups: ["dependencies"],
+                source: { type: "registry", url: "https://registry.yarnpkg.com" }
+              }, {
+                requirement: "^1.2.1",
+                file: "other_package/package.json",
+                groups: ["dependencies"],
+                source: { type: "registry", url: "https://registry.yarnpkg.com" }
+              }, {
+                requirement: "^1.2.1",
+                file: "packages/package1/package.json",
+                groups: ["dependencies"],
+                source: { type: "registry", url: "https://registry.yarnpkg.com" }
+              })
             end
           end
         end
@@ -1360,14 +1355,12 @@ RSpec.describe Dependabot::NpmAndYarn::FileParser do
             expect(dependency).to be_a(Dependabot::Dependency)
             expect(dependency.name).to eq("lerna")
             expect(dependency.version).to eq("3.6.0")
-            expect(dependency.requirements).to match_array(
-              [{
-                requirement: "^3.6.0",
-                file: "package.json",
-                groups: ["devDependencies"],
-                source: { type: "registry", url: "https://registry.npmjs.org" }
-              }]
-            )
+            expect(dependency.requirements).to contain_exactly({
+              requirement: "^3.6.0",
+              file: "package.json",
+              groups: ["devDependencies"],
+              source: { type: "registry", url: "https://registry.npmjs.org" }
+            })
           end
 
           it "parses the etag dependency" do
@@ -1375,19 +1368,17 @@ RSpec.describe Dependabot::NpmAndYarn::FileParser do
             expect(dependency).to be_a(Dependabot::Dependency)
             expect(dependency.name).to eq("etag")
             expect(dependency.version).to eq("1.8.0")
-            expect(dependency.requirements).to match_array(
-              [{
-                requirement: "^1.1.0",
-                file: "packages/package1/package.json",
-                groups: ["devDependencies"],
-                source: { type: "registry", url: "https://registry.npmjs.org" }
-              }, {
-                requirement: "^1.0.0",
-                file: "packages/other_package/package.json",
-                groups: ["devDependencies"],
-                source: { type: "registry", url: "https://registry.npmjs.org" }
-              }]
-            )
+            expect(dependency.requirements).to contain_exactly({
+              requirement: "^1.1.0",
+              file: "packages/package1/package.json",
+              groups: ["devDependencies"],
+              source: { type: "registry", url: "https://registry.npmjs.org" }
+            }, {
+              requirement: "^1.0.0",
+              file: "packages/other_package/package.json",
+              groups: ["devDependencies"],
+              source: { type: "registry", url: "https://registry.npmjs.org" }
+            })
           end
         end
       end
@@ -1432,19 +1423,17 @@ RSpec.describe Dependabot::NpmAndYarn::FileParser do
           its(:version) { is_expected.to eq("1.8.1") }
 
           its(:requirements) do
-            is_expected.to match_array(
-              [{
-                requirement: "^1.1.0",
-                file: "packages/package1/package.json",
-                groups: ["devDependencies"],
-                source: nil # TODO: { type: "registry", url: "https://registry.yarnpkg.com" }
-              }, {
-                requirement: "^1.0.0",
-                file: "other_package/package.json",
-                groups: ["devDependencies"],
-                source: nil # TODO: { type: "registry", url: "https://registry.yarnpkg.com" }
-              }]
-            )
+            is_expected.to contain_exactly({
+              requirement: "^1.1.0",
+              file: "packages/package1/package.json",
+              groups: ["devDependencies"],
+              source: nil # TODO: { type: "registry", url: "https://registry.yarnpkg.com" }
+            }, {
+              requirement: "^1.0.0",
+              file: "other_package/package.json",
+              groups: ["devDependencies"],
+              source: nil # TODO: { type: "registry", url: "https://registry.yarnpkg.com" }
+            })
           end
         end
 
@@ -1456,24 +1445,22 @@ RSpec.describe Dependabot::NpmAndYarn::FileParser do
           its(:version) { is_expected.to eq("1.2.0") }
 
           its(:requirements) do
-            is_expected.to match_array(
-              [{
-                requirement: "1.2.0",
-                file: "package.json",
-                groups: ["dependencies"],
-                source: nil # TODO: { type: "registry", url: "https://registry.yarnpkg.com" }
-              }, {
-                requirement: "^1.2.1",
-                file: "other_package/package.json",
-                groups: ["dependencies"],
-                source: nil # TODO: { type: "registry", url: "https://registry.yarnpkg.com" }
-              }, {
-                requirement: "^1.2.1",
-                file: "packages/package1/package.json",
-                groups: ["dependencies"],
-                source: nil # TODO: { type: "registry", url: "https://registry.yarnpkg.com" }
-              }]
-            )
+            is_expected.to contain_exactly({
+              requirement: "1.2.0",
+              file: "package.json",
+              groups: ["dependencies"],
+              source: nil # TODO: { type: "registry", url: "https://registry.yarnpkg.com" }
+            }, {
+              requirement: "^1.2.1",
+              file: "other_package/package.json",
+              groups: ["dependencies"],
+              source: nil # TODO: { type: "registry", url: "https://registry.yarnpkg.com" }
+            }, {
+              requirement: "^1.2.1",
+              file: "packages/package1/package.json",
+              groups: ["dependencies"],
+              source: nil # TODO: { type: "registry", url: "https://registry.yarnpkg.com" }
+            })
           end
         end
       end
@@ -1502,37 +1489,34 @@ RSpec.describe Dependabot::NpmAndYarn::FileParser do
     end
 
     context "with duplicate dependencies" do
-      subject { parser.parse }
+      subject(:parsed_file) { parser.parse }
 
       let(:files) { project_dependency_files("npm6_and_yarn/duplicate_dependency") }
 
       it "includes both registries" do
-        expect(subject.count).to eql(1)
-        expect(subject[0].requirements).to match_array([
-          {
-            requirement: "^10.5.12",
-            file: "package.json",
-            groups: ["dependencies"],
-            source: { type: "registry", url: "https://registry.yarnpkg.com" }
-          },
-          {
-            requirement: "10.5.12",
-            file: "package.json",
-            groups: ["devDependencies"],
-            source: { type: "registry", url: "https://registry.yarnpkg.com" }
-          }
-        ])
+        expect(parsed_file.count).to be(1)
+        expect(parsed_file[0].requirements).to contain_exactly({
+          requirement: "^10.5.12",
+          file: "package.json",
+          groups: ["dependencies"],
+          source: { type: "registry", url: "https://registry.yarnpkg.com" }
+        }, {
+          requirement: "10.5.12",
+          file: "package.json",
+          groups: ["devDependencies"],
+          source: { type: "registry", url: "https://registry.yarnpkg.com" }
+        })
       end
     end
 
     context "with multiple versions of a dependency" do
-      subject { parser.parse }
+      subject(:parsed_file) { parser.parse }
 
       let(:files) { project_dependency_files("npm8/transitive_dependency_multiple_versions") }
 
       it "stores all versions of the dependency in its metadata" do
         name = "kind-of"
-        dependency = subject.find { |dep| dep.name == name }
+        dependency = parsed_file.find { |dep| dep.name == name }
 
         expect(dependency.metadata[:all_versions]).to eq([
           Dependabot::Dependency.new(

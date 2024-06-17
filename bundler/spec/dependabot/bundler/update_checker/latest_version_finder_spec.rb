@@ -54,7 +54,7 @@ RSpec.describe Dependabot::Bundler::UpdateChecker::LatestVersionFinder do
   let(:rubygems_url) { "https://rubygems.org/api/v1/" }
 
   describe "#latest_version_details" do
-    subject { finder.latest_version_details }
+    subject(:latest_version_details) { finder.latest_version_details }
 
     context "with a rubygems source" do
       before do
@@ -110,7 +110,7 @@ RSpec.describe Dependabot::Bundler::UpdateChecker::LatestVersionFinder do
         let(:raise_on_ignored) { true }
 
         it "doesn't raise an error" do
-          expect { subject }.to_not raise_error
+          expect { latest_version_details }.not_to raise_error
         end
       end
 
@@ -123,7 +123,7 @@ RSpec.describe Dependabot::Bundler::UpdateChecker::LatestVersionFinder do
           let(:raise_on_ignored) { true }
 
           it "doesn't raise an error" do
-            expect { subject }.to_not raise_error
+            expect { latest_version_details }.not_to raise_error
           end
         end
       end
@@ -135,7 +135,7 @@ RSpec.describe Dependabot::Bundler::UpdateChecker::LatestVersionFinder do
           let(:raise_on_ignored) { true }
 
           it "doesn't raise an error" do
-            expect { subject }.to_not raise_error
+            expect { latest_version_details }.not_to raise_error
           end
         end
       end
@@ -147,7 +147,7 @@ RSpec.describe Dependabot::Bundler::UpdateChecker::LatestVersionFinder do
           let(:raise_on_ignored) { true }
 
           it "doesn't raise an error" do
-            expect { subject }.to_not raise_error
+            expect { latest_version_details }.not_to raise_error
           end
         end
       end
@@ -161,7 +161,7 @@ RSpec.describe Dependabot::Bundler::UpdateChecker::LatestVersionFinder do
           let(:raise_on_ignored) { true }
 
           it "raises an error" do
-            expect { subject }.to raise_error(Dependabot::AllVersionsIgnored)
+            expect { latest_version_details }.to raise_error(Dependabot::AllVersionsIgnored)
           end
         end
       end
@@ -176,14 +176,14 @@ RSpec.describe Dependabot::Bundler::UpdateChecker::LatestVersionFinder do
         let(:ignored_versions) { [">= 0"] }
 
         it "returns nil" do
-          expect(subject).to be_nil
+          expect(latest_version_details).to be_nil
         end
 
         context "when raise_on_ignored is set" do
           let(:raise_on_ignored) { true }
 
           it "raises an error" do
-            expect { subject }.to raise_error(Dependabot::AllVersionsIgnored)
+            expect { latest_version_details }.to raise_error(Dependabot::AllVersionsIgnored)
           end
         end
       end
@@ -259,6 +259,13 @@ RSpec.describe Dependabot::Bundler::UpdateChecker::LatestVersionFinder do
 
     context "with a private rubygems source" do
       let(:dependency_files) { bundler_project_dependency_files("specified_source") }
+      let(:subprocess_error) do
+        Dependabot::SharedHelpers::HelperSubprocessFailed.new(
+          message: error_message,
+          error_context: {},
+          error_class: error_class
+        )
+      end
       let(:source) { { type: "rubygems" } }
       let(:registry_url) { "https://repo.fury.io/greysteil/" }
       let(:gemfury_business_url) do
@@ -302,14 +309,6 @@ RSpec.describe Dependabot::Bundler::UpdateChecker::LatestVersionFinder do
         let(:ignored_versions) { [">= 1.9.0.a, < 2.0"] }
 
         its([:version]) { is_expected.to eq(Gem::Version.new("1.5.0")) }
-      end
-
-      let(:subprocess_error) do
-        Dependabot::SharedHelpers::HelperSubprocessFailed.new(
-          message: error_message,
-          error_context: {},
-          error_class: error_class
-        )
       end
 
       context "when we don't have authentication details", :bundler_v1_only do
@@ -486,7 +485,7 @@ RSpec.describe Dependabot::Bundler::UpdateChecker::LatestVersionFinder do
         it "fetches the latest SHA-1 hash" do
           commit_sha = finder.latest_version_details[:commit_sha]
           expect(commit_sha).to match(/^[0-9a-f]{40}$/)
-          expect(commit_sha).to_not eq(current_version)
+          expect(commit_sha).not_to eq(current_version)
         end
 
         context "when the gem has a bad branch" do
@@ -558,7 +557,7 @@ RSpec.describe Dependabot::Bundler::UpdateChecker::LatestVersionFinder do
   end
 
   describe "#lowest_security_fix_version" do
-    subject { finder.lowest_security_fix_version }
+    subject(:lowest_security_fix_version) { finder.lowest_security_fix_version }
 
     let(:current_version) { "1.1.0" }
     let(:security_advisories) do

@@ -45,7 +45,7 @@ RSpec.describe Dependabot::NpmAndYarn::Requirement do
 
       it { is_expected.to eq(described_class.new(">= 1.0.0", "< 2.0.0.a")) }
 
-      context "for two digits" do
+      context "when dealing with two digits" do
         let(:requirement_string) { "^1.2" }
 
         it { is_expected.to eq(described_class.new(">= 1.2", "< 2.0.0.a")) }
@@ -57,7 +57,7 @@ RSpec.describe Dependabot::NpmAndYarn::Requirement do
         it { is_expected.to eq(described_class.new(">= 1.0.0", "< 2.0.0.a")) }
       end
 
-      context "for two digits with x" do
+      context "when dealing with two digits with x" do
         let(:requirement_string) { "^1.2.x" }
 
         it { is_expected.to eq(described_class.new(">= 1.2", "< 2.0.0.a")) }
@@ -171,7 +171,7 @@ RSpec.describe Dependabot::NpmAndYarn::Requirement do
 
       its(:to_s) { is_expected.to eq(Gem::Requirement.new("~> 1.5.1").to_s) }
 
-      context "specified to 2 places" do
+      context "when specified to 2 places" do
         let(:requirement_string) { "~> 0.5" }
 
         its(:to_s) { is_expected.to eq(Gem::Requirement.new("~> 0.5").to_s) }
@@ -235,19 +235,19 @@ RSpec.describe Dependabot::NpmAndYarn::Requirement do
     context "with a latest string" do
       let(:requirement_string) { "latest" }
 
-      it { expect { subject }.not_to raise_error }
+      it { expect { requirement }.not_to raise_error }
     end
   end
 
   describe "#requirements_array" do
-    subject { described_class.requirements_array(requirement_string) }
+    subject(:reqs) { described_class.requirements_array(requirement_string) }
 
     context "with multiple intersecting requirements" do
       let(:requirement_string) { ">=1.0.0 <=1.5.0" }
 
       it { is_expected.to eq([Gem::Requirement.new(">= 1.0.0", "<= 1.5.0")]) }
 
-      context "separated by &&" do
+      context "when requirement string is separated by &&" do
         let(:requirement_string) { ">=1.0.0 && <=1.5.0" }
 
         it { is_expected.to eq([Gem::Requirement.new(">= 1.0.0", "<= 1.5.0")]) }
@@ -258,12 +258,8 @@ RSpec.describe Dependabot::NpmAndYarn::Requirement do
       let(:requirement_string) { "^1.0.0 || ^2.0.0" }
 
       it do
-        is_expected.to match_array(
-          [
-            Gem::Requirement.new(">= 1.0.0", "< 2.0.0.a"),
-            Gem::Requirement.new(">= 2.0.0", "< 3.0.0.a")
-          ]
-        )
+        expect(subject).to contain_exactly(Gem::Requirement.new(">= 1.0.0", "< 2.0.0.a"),
+                                           Gem::Requirement.new(">= 2.0.0", "< 3.0.0.a"))
       end
     end
 
@@ -271,12 +267,8 @@ RSpec.describe Dependabot::NpmAndYarn::Requirement do
       let(:requirement_string) { "(^1.0.0 || ^2.0.0)" }
 
       it do
-        is_expected.to match_array(
-          [
-            Gem::Requirement.new(">= 1.0.0", "< 2.0.0.a"),
-            Gem::Requirement.new(">= 2.0.0", "< 3.0.0.a")
-          ]
-        )
+        expect(subject).to contain_exactly(Gem::Requirement.new(">= 1.0.0", "< 2.0.0.a"),
+                                           Gem::Requirement.new(">= 2.0.0", "< 3.0.0.a"))
       end
     end
   end
@@ -285,22 +277,22 @@ RSpec.describe Dependabot::NpmAndYarn::Requirement do
     subject { requirement.satisfied_by?(version) }
 
     context "with a Gem::Version" do
-      context "for the current version" do
+      context "when dealing with the current version" do
         let(:version) { Gem::Version.new("1.0.0") }
 
-        it { is_expected.to eq(true) }
+        it { is_expected.to be(true) }
 
         context "when the requirement includes a v-prefix" do
           let(:requirement_string) { ">=v1.0.0" }
 
-          it { is_expected.to eq(true) }
+          it { is_expected.to be(true) }
         end
       end
 
-      context "for an out-of-range version" do
+      context "when dealing with an out-of-range version" do
         let(:version) { Gem::Version.new("0.9.0") }
 
-        it { is_expected.to eq(false) }
+        it { is_expected.to be(false) }
       end
     end
 
@@ -309,27 +301,27 @@ RSpec.describe Dependabot::NpmAndYarn::Requirement do
         Dependabot::NpmAndYarn::Version.new(version_string)
       end
 
-      context "for the current version" do
+      context "when dealing with the current version" do
         let(:version_string) { "1.0.0" }
 
-        it { is_expected.to eq(true) }
+        it { is_expected.to be(true) }
 
-        context "that includes a 'v' prefix" do
+        context "when including a 'v' prefix" do
           let(:version_string) { "v1.0.0" }
 
-          it { is_expected.to eq(true) }
+          it { is_expected.to be(true) }
         end
 
-        context "that includes a local version" do
+        context "when including a local version" do
           let(:version_string) { "1.0.0+gc.1" }
 
-          it { is_expected.to eq(true) }
+          it { is_expected.to be(true) }
         end
 
         context "with a 'latest' requirement" do
           let(:requirement_string) { "latest" }
 
-          it { is_expected.to eq(false) }
+          it { is_expected.to be(false) }
         end
       end
     end

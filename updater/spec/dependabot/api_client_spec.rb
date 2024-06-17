@@ -9,7 +9,7 @@ require "dependabot/pull_request_creator"
 require "dependabot/api_client"
 
 RSpec.describe Dependabot::ApiClient do
-  subject(:client) { Dependabot::ApiClient.new("http://example.com", 1, "token") }
+  subject(:client) { described_class.new("http://example.com", 1, "token") }
 
   let(:headers) { { "Content-Type" => "application/json" } }
 
@@ -173,16 +173,16 @@ RSpec.describe Dependabot::ApiClient do
             .with(headers: { "Authorization" => "token" })
             .with do |req|
               data = JSON.parse(req.body)["data"]
-              expect(data["dependencies"].first["removed"]).to eq(true)
-              expect(data["dependencies"].first.key?("version")).to eq(false)
-              expect(data["dependencies"].last.key?("removed")).to eq(false)
+              expect(data["dependencies"].first["removed"]).to be(true)
+              expect(data["dependencies"].first.key?("version")).to be(false)
+              expect(data["dependencies"].last.key?("removed")).to be(false)
               expect(data["dependencies"].last["version"]).to eq("1.8.0")
               true
             end)
       end
     end
 
-    context "grouped updates" do
+    context "when dealing with grouped updates" do
       it "does not include the dependency-group key by default" do
         client.create_pull_request(dependency_change, base_commit)
 
